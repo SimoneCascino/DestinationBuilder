@@ -1,7 +1,6 @@
 plugins {
     id 'java-library'
     id 'kotlin'
-    id 'org.jetbrains.kotlin.jvm'
     id 'maven-publish'
 }
 
@@ -17,7 +16,9 @@ publishing {
             artifactId = 'destinationbuilder'
             version = 'v.1.1.1'
 
-            from components.java
+            afterEvaluate{
+                from components.java
+            }
         }
     }
 }
