@@ -1,7 +1,7 @@
 plugins {
     id 'com.android.application'
     id 'kotlin-android'
-    id 'kotlin-kapt'
+    id 'com.google.devtools.ksp' version '1.8.10-1.0.9'
 }
 
 android {
@@ -17,6 +17,15 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary true
+        }
+    }
+
+    kotlin {
+        sourceSets.debug {
+            kotlin.srcDirs += 'build/generated/ksp/debug/kotlin'
+        }
+        sourceSets.release {
+            kotlin.srcDirs += 'build/generated/ksp/release/kotlin'
         }
     }
 
@@ -60,5 +69,5 @@ dependencies {
     implementation 'androidx.navigation:navigation-runtime-ktx:2.5.3'
 
     implementation project(path: ':destination-builder')
-    kapt project(path: ':destination-builder')
+    ksp project(path: ':destination-builder')
 }

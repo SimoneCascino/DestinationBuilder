@@ -217,7 +217,8 @@ fun FifthDestination(){
 }
 
 @Destination(
-    graphName = "FeatureGraph"
+    graphName = "FeatureGraph",
+    paths = ["test"]
 )
 @Composable
 fun SixthDestination(){
