@@ -17,8 +17,8 @@ limitations under the License.
  */
 
 import com.squareup.kotlinpoet.*
-import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import it.simonecascino.destinationbuilder.annotation.Destination
+import it.simonecascino.destinationbuilder.base.BaseDestination
 import java.io.File
 import javax.annotation.processing.AbstractProcessor
 import javax.annotation.processing.RoundEnvironment
@@ -45,142 +45,47 @@ class DestinationProcessor: AbstractProcessor() {
 
         if(elements.isNotEmpty()){
 
-            val sealedClassBuilder = prepareSealedClass(elements)
-
-            elements.forEach {
-
-                val name = it.simpleName.toString()
-                val annotation = it.getAnnotation(Destination::class.java)
-
-                generateSealedClass(annotation, sealedClassBuilder, name)
-
+            val graphs = elements.groupBy {
+                it.getAnnotation(Destination::class.java).graphName
             }
 
-            FileSpec.builder(GenerationConstants.Global.PACKAGE_NAME, GenerationConstants.Global.CLASS_NAME).also { fileSpec ->
-                fileSpec.addType(sealedClassBuilder.build())
-            }.build().writeTo(File(kaptKotlinGeneratedDir))
+            graphs.keys.forEach {
+
+                val itemsForGraph = graphs[it] ?: emptyList()
+
+                val objectBuilder = TypeSpec.objectBuilder(it)
+                    .addFunction(
+                        generateFromFunction(itemsForGraph)
+                    )
+
+                itemsForGraph.forEach {
+
+                    val name = it.simpleName.toString()
+                    val annotation = it.getAnnotation(Destination::class.java)
+
+                    generateDestination(annotation, objectBuilder, name)
+
+                }
+
+                FileSpec.builder(
+                    GenerationConstants.Global.PACKAGE_NAME,
+                    it
+                ).also { fileSpec ->
+                    fileSpec.addType(objectBuilder.build())
+                }.build().writeTo(File(kaptKotlinGeneratedDir))
+
+            }
 
         }
 
         return true
     }
 
-    private fun prepareSealedClass(elements: Set<Element>): TypeSpec.Builder {
-
-        val array = ClassName("kotlin", "Array")
-        val producerArrayOfStrings = array.parameterizedBy(WildcardTypeName.producerOf(String::class))
-
-        return TypeSpec.classBuilder(GenerationConstants.Global.CLASS_NAME)
-            .addModifiers(KModifier.SEALED)
-            .primaryConstructor(
-                FunSpec.constructorBuilder()
-                    .addParameter(GenerationConstants.Parameters.TITLE, String::class)
-                    .addParameter(GenerationConstants.Parameters.PATHS, producerArrayOfStrings)
-                    .addParameter(GenerationConstants.Parameters.QUERY_PARAMS, producerArrayOfStrings)
-                    .addParameter(GenerationConstants.Parameters.DYNAMIC_TITLE, Boolean::class)
-                    .build()
-            )
-            .addProperty(
-                PropertySpec.builder(GenerationConstants.Parameters.TITLE, String::class)
-                    .initializer(GenerationConstants.Parameters.TITLE).build()
-            )
-            .addProperty(
-                PropertySpec.builder(GenerationConstants.Parameters.PATHS, producerArrayOfStrings)
-                    .initializer(GenerationConstants.Parameters.PATHS).build()
-            )
-            .addProperty(
-                PropertySpec.builder(GenerationConstants.Parameters.QUERY_PARAMS, producerArrayOfStrings)
-                    .initializer(GenerationConstants.Parameters.QUERY_PARAMS).build()
-            )
-            .addProperty(
-                PropertySpec.builder(GenerationConstants.Parameters.DYNAMIC_TITLE, Boolean::class)
-                    .initializer(GenerationConstants.Parameters.DYNAMIC_TITLE).build()
-            )
-            .addProperty(
-                PropertySpec.builder(GenerationConstants.Parameters.NAME, String::class, KModifier.PRIVATE)
-                    .initializer(CodeBlock.builder().add("this::class.simpleName ?: throw IllegalStateException()").build()).build()
-            )
-            .addFunction(
-                generateRouteFunction()
-            )
-            .addFunction(
-                generatePathFunction()
-            )
-            .addType(
-                generateFromFunction(elements)
-            )
-
-    }
-
-    private fun generatePathFunction(): FunSpec{
-
-        val map = ClassName("kotlin.collections", "Map")
-        val producerMapOfStrings = map.parameterizedBy(WildcardTypeName.producerOf(String::class), WildcardTypeName.producerOf(String::class))
-        val producerMapOfStringsNullable = map.parameterizedBy(WildcardTypeName.producerOf(String::class), WildcardTypeName.producerOf(String::class.asTypeName().copy(nullable = true)))
-
-        val complexPathTemplate = "/" + "$" + "{pathMap[it]}"
-        val keyException = "$" + "it is not in the map"
-
-        return FunSpec.builder(GenerationConstants.Functions.BUILD_PATH)
-            .addModifiers(KModifier.PROTECTED)
-            .addParameter(GenerationConstants.Parameters.PATH_MAP, producerMapOfStrings)
-            .addParameter(GenerationConstants.Parameters.QUERY_MAP, producerMapOfStringsNullable)
-            .returns(String::class)
-            .addStatement("var pathToBuild = StringBuilder()")
-            .addStatement("pathToBuild.append(${GenerationConstants.Parameters.NAME})")
-            .beginControlFlow("if(${GenerationConstants.Parameters.PATH_MAP}.containsKey(%S))", GenerationConstants.Parameters.ANDROID_TITLE_VALUE)
-            .addStatement("pathToBuild.append(%S)", "/")
-            .addStatement("pathToBuild.append(${GenerationConstants.Parameters.PATH_MAP}[%S])", GenerationConstants.Parameters.ANDROID_TITLE_VALUE)
-            .endControlFlow()
-            .beginControlFlow("${GenerationConstants.Parameters.PATHS}.forEach{")
-            .beginControlFlow("if(!${GenerationConstants.Parameters.PATH_MAP}.containsKey(it))")
-            .addStatement("throw IllegalArgumentException(%P)", keyException)
-            .endControlFlow()
-            .addStatement("pathToBuild.append(%P)", complexPathTemplate)
-            .endControlFlow()
-            .beginControlFlow("if(queryMap.isNotEmpty())")
-            .addStatement("pathToBuild.append(%S)", "?")
-            .beginControlFlow("queryMap.forEach{(key, value) ->")
-            .addStatement("pathToBuild.append(%P)", "$" + "key=$" + "value&")
-            .endControlFlow()
-            .addStatement("pathToBuild.deleteCharAt(pathToBuild.length -1)")
-            .endControlFlow()
-            .addStatement("return pathToBuild.toString()")
-            .build()
-    }
-
-    private fun generateRouteFunction(): FunSpec{
-
-        return FunSpec.builder(GenerationConstants.Functions.ROUTE)
-            .returns(String::class)
-            .addStatement("var route = StringBuilder(${GenerationConstants.Parameters.NAME})")
-            .beginControlFlow("if(${GenerationConstants.Parameters.DYNAMIC_TITLE})")
-            .addStatement("route.append(%S)", "/{${GenerationConstants.Parameters.ANDROID_TITLE_VALUE}}")
-            .endControlFlow()
-            .beginControlFlow("if(${GenerationConstants.Parameters.PATHS}.isNotEmpty())")
-            .addStatement("val endPath = ${GenerationConstants.Parameters.PATHS}.joinToString(%S)", "}/{")
-            .addStatement("route.append(%S)", "/{")
-            .addStatement("route.append(endPath)")
-            .addStatement("route.append(%S)", "}")
-            .endControlFlow()
-            .beginControlFlow("if(${GenerationConstants.Parameters.QUERY_PARAMS}.isNotEmpty())")
-            .addStatement("route.append(%S)", "?")
-            .beginControlFlow("${GenerationConstants.Parameters.QUERY_PARAMS}.forEach{ query ->")
-            .addStatement("route.append(%P)", "$" + "query={$" + "query}&")
-            .endControlFlow()
-            .addStatement("route.deleteCharAt(route.length -1)")
-            .endControlFlow()
-            .addStatement("return route.toString()")
-            .build()
-
-    }
-
-    private fun generateFromFunction(elements: Set<Element>): TypeSpec{
-        val toReturns = ClassName(GenerationConstants.Global.PACKAGE_NAME, GenerationConstants.Global.CLASS_NAME)
+    private fun generateFromFunction(elements: List<Element>): FunSpec{
 
         val function = FunSpec.builder(GenerationConstants.Functions.FROM_PATH)
             .addParameter(GenerationConstants.Parameters.PATH, String::class)
-            .returns(toReturns)
+            .returns(BaseDestination::class)
             .beginControlFlow("val name = if(${GenerationConstants.Parameters.PATH}.contains(%S))", "/")
             .addStatement("${GenerationConstants.Parameters.PATH}.split(%S).first()", "/")
             .endControlFlow()
@@ -195,22 +100,20 @@ class DestinationProcessor: AbstractProcessor() {
             function.addStatement(" %S -> $name", name)
         }
 
+        //todo: don't throw the exception here, since we may have multiple graph
         function.addStatement(" else -> throw RuntimeException()")
 
         function.addStatement("}")
 
-        return TypeSpec.companionObjectBuilder()
-            .addFunction(
-                function.build()
-            )
-            .addProperty(
-                PropertySpec.builder(GenerationConstants.Parameters.ANDROID_TITLE_KEY, String::class, KModifier.CONST)
-                    .initializer("%S", GenerationConstants.Parameters.ANDROID_TITLE_VALUE).build()
-            )
-            .build()
+        return function.build()
+
     }
 
-    private fun generateSealedClass(annotation: Destination, superClass: TypeSpec.Builder, name: String){
+    private fun generateDestination(
+        annotation: Destination,
+        superClass: TypeSpec.Builder,
+        name: String
+    ){
 
         val pathsTemplate = StringBuilder()
         val queryParamsTemplate = StringBuilder()
@@ -228,8 +131,7 @@ class DestinationProcessor: AbstractProcessor() {
         }
 
         val objectSpecBuilder = TypeSpec.objectBuilder(name)
-            .superclass(ClassName(GenerationConstants.Global.PACKAGE_NAME, GenerationConstants.Global.CLASS_NAME))
-            .addSuperclassConstructorParameter("%S", annotation.title)
+            .superclass(BaseDestination::class)
             .addSuperclassConstructorParameter(CodeBlock.builder().add("arrayOf($pathsTemplate)", *annotation.paths).build())
             .addSuperclassConstructorParameter(CodeBlock.builder().add("arrayOf($queryParamsTemplate)", *annotation.queryParams).build())
             .addSuperclassConstructorParameter(CodeBlock.builder().add("${annotation.dynamicTitle}").build())
@@ -301,26 +203,16 @@ private object GenerationConstants{
     object Global{
         const val PACKAGE_NAME = "it.simonecascino.destination"
         const val GENERATION_FOLDER = "kapt.kotlin.generated"
-        const val CLASS_NAME = "Destinations"
     }
 
     object Functions{
         const val BUILD_PATH = "buildPath"
-        const val ROUTE = "route"
         const val FROM_PATH = "fromPath"
     }
 
     object Parameters{
 
-        const val PATHS = "paths"
-        const val QUERY_PARAMS = "queryParams"
         const val PATH = "path"
-        const val DYNAMIC_TITLE = "dynamicTitle"
-        const val TITLE = "title"
-        const val PATH_MAP = "pathMap"
-        const val QUERY_MAP = "queryMap"
-        const val NAME = "name"
-        const val ANDROID_TITLE_KEY = "ANDROID_TITLE"
         const val ANDROID_TITLE_VALUE = "androidAppTitle"
 
     }

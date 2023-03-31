@@ -20,7 +20,7 @@ limitations under the License.
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.SOURCE)
 annotation class Destination(
-    val title: String = "",
+    val graphName: String = "Destinations",
     val dynamicTitle: Boolean = false,
     val paths: Array<String> = [],
     val queryParams: Array<String> = []
