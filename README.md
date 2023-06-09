@@ -1,7 +1,7 @@
 # DestinationBuilder
 Google recently released Jetpack compose, the new UI toolkit for Android. It also released navigation for Jetpack compose, a component which help you to navigate between composable functions ([here the official documentation](https://developer.android.com/jetpack/compose/navigation), you must know about it to understand the purpose of this library).
 
-Navigation provide some nice features, but requires the definition of all the destinations. It also requires to handle some logic to generate the routes which are used to navigate. The most recommended approach is to use enums or sealed classes. Destination Builder autogenerate a sealed class for you, via annotation processor, handling several things, avoiding boilerplate and mainteinance problems.
+Navigation provide some nice features, but requires the definition of all the destinations. It also requires to handle some logic to generate the routes which are used to navigate. The most recommended approach is to use enums or sealed classes. Destination Builder autogenerates kotlin objects for you, via annotation processor, handling several things, avoiding boilerplate and mainteinance problems.
 
 # How it works?
 To trigger the generation of the sealed class, you must annotate a composable function with the **Destination** annotation. So, suppose that the first screen you want to show in your app is a composable functiona called **FirstDestination**, you have the following: 
@@ -9,86 +9,30 @@ To trigger the generation of the sealed class, you must annotate a composable fu
 ``` kotlin
 @Composable
 @Destination
-fun FirstDestination(){
+fun FirstScreen(){
 
 }
 ```
 
-This will generate a sealed class called **Destinations** and its first child, an object wrapped into it, called **FirstDestination**. It also generate several helper functions, we will se them later:
+This will generate kotlin object called **Destinations** and an object wrapped into it, called **FirstScreen**, which extends **BaseDestination**. It also generate several helper functions, we will se them later:
 
 ``` kotlin
-public sealed class Destinations(
-  public val title: String,
-  public val paths: Array<out String>,
-  public val queryParams: Array<out String>,
-  public val dynamicTitle: Boolean
-) {
-  private val name: String = this::class.simpleName ?: throw IllegalStateException()
-
-  public fun route(): String {
-    var route = StringBuilder(name)
-    if(dynamicTitle) {
-      route.append("/{androidAppTitle}")
+public object Destinations {
+  public fun fromPath(path: String): BaseDestination {
+    val name = if(path.contains("/")) {
+      path.split("/").first()
     }
-    if(paths.isNotEmpty()) {
-      val endPath = paths.joinToString("}/{")
-      route.append("/{")
-      route.append(endPath)
-      route.append("}")
+    else if (path.contains("?")) {
+      path.split("?").first()
     }
-    if(queryParams.isNotEmpty()) {
-      route.append("?")
-      queryParams.forEach{ query ->
-        route.append("""$query={$query}&""")
-      }
-      route.deleteCharAt(route.length -1)
-    }
-    return route.toString()
-  }
-
-  protected fun buildPath(pathMap: Map<out String, out String>, queryMap: Map<out String, out
-      String?>): String {
-    var pathToBuild = StringBuilder()
-    pathToBuild.append(name)
-    if(pathMap.containsKey("androidAppTitle")) {
-      pathToBuild.append("/")
-      pathToBuild.append(pathMap["androidAppTitle"])
-    }
-    paths.forEach{
-      if(!pathMap.containsKey(it)) {
-        throw IllegalArgumentException("""$it is not in the map""")
-      }
-      pathToBuild.append("""/${pathMap[it]}""")
-    }
-    if(queryMap.isNotEmpty()) {
-      pathToBuild.append("?")
-      queryMap.forEach{(key, value) ->
-        pathToBuild.append("""$key=$value&""")
-      }
-      pathToBuild.deleteCharAt(pathToBuild.length -1)
-    }
-    return pathToBuild.toString()
-  }
-
-  public companion object {
-    public const val ANDROID_TITLE: String = "androidAppTitle"
-
-    public fun fromPath(path: String): Destinations {
-      val name = if(path.contains("/")) {
-        path.split("/").first()
-      }
-      else if (path.contains("?")) {
-        path.split("?").first()
-      }
-      else path
-      return when(name){
-       "FirstDestination" -> FirstDestination
-       else -> throw RuntimeException()
-      }
+    else path
+    return when(name){
+     "FirstScreen" -> FirstScreen
+     else -> throw RuntimeException()
     }
   }
 
-  public object FirstDestination : Destinations("", arrayOf(), arrayOf(), false) {
+  public object FirstScreen : BaseDestination(arrayOf(), arrayOf(), false) {
     public fun buildPath(): String {
       val pathMap = mutableMapOf<String, String>()
       val queryMap = mutableMapOf<String, String?>()
@@ -98,14 +42,238 @@ public sealed class Destinations(
 }
 ```
 
-At first glance it could appear complicated, but everything will be cleared later. So keep the focus on the sealed class (Destinations) and its child (FirstDestination). 
+# How to use it 
 
 Lets start to build the navigation graph. As described in the navigation documentation, you first have to use the **NavHost** composable function. It requires the navController, a string which represent the route of the start destination and a lambda which represent the NavGraphBuilder.
 
 ``` kotlin
-NavHost(navController = navController, startDestination = Destinations.FirstDestination.route()){
+NavHost(navController = navController, startDestination = Destinations.FirstScreen.route()){
+
+    composable(Destinations.FirstScreen.route()){
+
+    }
 
 }
+```
+
+If you log Destinations.FirstScreen.route(), it will print **FirstScreen**. 
+
+# Passing arguments between destinations
+
+Now imagine that FirstScreen contains a list of items. Clicking on an item you can see its detail screen. To load the proper detail screen, we need to pass something, usually the id of the item, to the next destination. 
+
+According to the documentation, you should create a route like this:
+
+```kotlin
+"detailscreen/{id}"
+```
+
+This route should be used in the NavHost composable dsl, so:
+
+``` kotlin
+NavHost(navController = navController, startDestination = Destinations.FirstScreen.route()){
+
+    composable(Destinations.FirstScreen.route()){
+
+    }
+    
+    composable("detailscreen/{id}"){
+
+    }
+
+}
+```
+
+To build such destination write the following:
+
+```kotlin
+@Destination(
+    paths = ["id"]
+)
+@Composable
+fun DetailScreen(){
+
+}
+```
+
+If you look now the generated object you will find this other object inside:
+
+```kotlin
+public object DetailScreen : BaseDestination(arrayOf("id"), arrayOf(), false) {
+    public const val KEY_id: String = "id"
+
+    public fun buildPath(id: String): String {
+      val pathMap = mutableMapOf<String, String>()
+      val queryMap = mutableMapOf<String, String?>()
+      pathMap["id"] = id
+      return super.buildPath(pathMap, queryMap)
+    }
+  }
+  ```
+  
+Logging Destinations.DetailScreen.route() will print **DetailScreen/{id}**, which is pretty much what we wanted to obtain, but in pascal case. Currently the generation matchs the name of the function, but I'm planning to provide a way to customise it.
+So we can replace the hardcoded string in the composable dsl of the navigation graph:
+
+```kotlin
+composable(Destinations.DetailScreen.route()){
+
+}
+```
+
+So now we have another autogenerated route, which avoid the developer to manually maintains hardcoded strings. But such route can be used to define a destination, we also need to have something which can be used with the NavHostController to perform the navigation. To navigate we need to do something like this:
+
+```kotlin
+val navController = rememberNavController
+navController.navigate("...")
+```
+
+In the navigate function we need to pass the route of the destination with the argument properly replaced, so if the id of the item is **1**, to navigate to the DetailScreen destination, we need to write the following:
+
+```kotlin
+navController.navigate("DetailScreen/1")
+```
+
+This can be easily done with the generated object. If you check the code posted above, in the generated DetailScreen object we have this function:
+
+```kotlin
+public fun buildPath(id: String): String {
+      val pathMap = mutableMapOf<String, String>()
+      val queryMap = mutableMapOf<String, String?>()
+      pathMap["id"] = id
+      return super.buildPath(pathMap, queryMap)
+}
+```
+
+Logging **Destinations.DetailScreen.buildPath("1")** will print **DetailScreen/1** which is exactly what we need. The attributes to pass to the buildPath functions are always strings (so if the id is an Int, you will have to convert it into a string) and they alwas reflect what you wrote in the annotation. You can pass all the arguments you want:
+
+```kotlin
+@Destination(
+    paths = ["id", "anotherArgument", "andAnother"]
+)
+@Composable
+fun ThirdScreen(){
+
+}
+
+//will generate the following:
+
+public object ThirdScreen : BaseDestination(arrayOf("id","anotherArgument","andAnother"),
+      arrayOf(), false) {
+    public const val KEY_id: String = "id"
+
+    public const val KEY_anotherArgument: String = "anotherArgument"
+
+    public const val KEY_andAnother: String = "andAnother"
+
+    public fun buildPath(
+      id: String,
+      anotherArgument: String,
+      andAnother: String,
+    ): String {
+      val pathMap = mutableMapOf<String, String>()
+      val queryMap = mutableMapOf<String, String?>()
+      pathMap["id"] = id
+      pathMap["anotherArgument"] = anotherArgument
+      pathMap["andAnother"] = andAnother
+      return super.buildPath(pathMap, queryMap)
+    }
+  }
+```
+
+# Optional arguments
+
+According to the navigation documentation, you can also pass optional arguments between destinations. To pass optional arguments, we need to use them as query params, for example a possible destination route with optional argument is **FourthDestination?optionalArg={optionalArg}**. So we can do:
+
+```kotlin
+@Destination(
+    queryParams = ["optionalArg"]
+)
+@Composable
+fun FourthDestination(){
+
+}
+```
+
+To generate:
+
+```kotlin
+public object FourthDestination : BaseDestination(arrayOf(), arrayOf("optionalArg"), false) {
+    public const val KEY_optionalArg: String = "optionalArg"
+
+    public fun buildPath(optionalArg: String? = null): String {
+      val pathMap = mutableMapOf<String, String>()
+      val queryMap = mutableMapOf<String, String?>()
+      if(optionalArg != null) {
+        queryMap["optionalArg"] = optionalArg
+      }
+      return super.buildPath(pathMap, queryMap)
+    }
+  }
+```
+
+Notice that in the **buildPath** function the **optionalArg** attribute is nullable, null by default. So logging **Destinations.FourthDestination.buildPath()** will write **FourthDestination** and logging **Destinations.FourthDestination.buildPath("hello")** will write **FourthDestination?optionalArg=hello**.
+
+You can combine every kind of path you want, for example:
+
+```kotlin
+@Destination(
+    paths = ["id", "anotherArgument", "andAnother"],
+    queryParams = ["optionalArg", "optionalArg2"]
+)
+@Composable
+fun FifthDestination(){
+
+}
+
+//generates the following
+
+public object FifthDestination : BaseDestination(arrayOf("id","anotherArgument","andAnother"),
+      arrayOf("optionalArg","optionalArg2"), false) {
+    public const val KEY_id: String = "id"
+
+    public const val KEY_anotherArgument: String = "anotherArgument"
+
+    public const val KEY_andAnother: String = "andAnother"
+
+    public const val KEY_optionalArg: String = "optionalArg"
+
+    public const val KEY_optionalArg2: String = "optionalArg2"
+
+    public fun buildPath(
+      id: String,
+      anotherArgument: String,
+      andAnother: String,
+      optionalArg: String? = null,
+      optionalArg2: String? = null,
+    ): String {
+      val pathMap = mutableMapOf<String, String>()
+      val queryMap = mutableMapOf<String, String?>()
+      pathMap["id"] = id
+      pathMap["anotherArgument"] = anotherArgument
+      pathMap["andAnother"] = andAnother
+      if(optionalArg != null) {
+        queryMap["optionalArg"] = optionalArg
+      }
+      if(optionalArg2 != null) {
+        queryMap["optionalArg2"] = optionalArg2
+      }
+      return super.buildPath(pathMap, queryMap)
+    }
+  }
+```
+
+Logging **Destinations.FifthDestination.route()** will print **FifthDestination/{id}/{anotherArgument}/{andAnother}?optionalArg={optionalArg}&optionalArg2={optionalArg2}**. Also check the following:
+
+```kotlin
+Destinations.FifthDestination.buildPath(
+                    id = "1",
+                    anotherArgument = "hello",
+                    andAnother = "hi",
+                    optionalArg = "good",
+                    optionalArg2 = "last"
+)
+
+//creates the string FifthDestination/1/hello/hi?optionalArg=good&optionalArg2=last
 ```
 
 
