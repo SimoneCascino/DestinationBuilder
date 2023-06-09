@@ -1,7 +1,7 @@
 # DestinationBuilder
 Google recently released Jetpack compose, the new UI toolkit for Android. It also released navigation for Jetpack compose, a component which help you to navigate between composable functions ([here the official documentation](https://developer.android.com/jetpack/compose/navigation), you must know about it to understand the purpose of this library).
 
-Navigation provide some nice features, but requires the definition of all the destinations. It also requires to handle some logic to generate the routes which are used to navigate. The most recommended approach is to use enum or sealed classes to do this. Destination Builder autogenerate a sealed class for you, via annotation processor, handling several things, avoiding boilerplate and mainteinance problems.
+Navigation provide some nice features, but requires the definition of all the destinations. It also requires to handle some logic to generate the routes which are used to navigate. The most recommended approach is to use enums or sealed classes. Destination Builder autogenerate a sealed class for you, via annotation processor, handling several things, avoiding boilerplate and mainteinance problems.
 
 # How it works?
 To trigger the generation of the sealed class, you must annotate a composable function with the **Destination** annotation. So, suppose that the first screen you want to show in your app is a composable functiona called **FirstDestination**, you have the following: 
@@ -107,5 +107,7 @@ NavHost(navController = navController, startDestination = Destinations.FirstDest
 
 }
 ```
+
+
 
 
