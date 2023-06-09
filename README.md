@@ -56,7 +56,7 @@ NavHost(navController = navController, startDestination = Destinations.FirstScre
 }
 ```
 
-If you log Destinations.FirstScreen.route(), it will print **FirstScreen**. 
+**Destinations.FirstScreen.route()** returns the string **FirstScreen**. 
 
 # Passing arguments between destinations
 
@@ -111,7 +111,7 @@ public object DetailScreen : BaseDestination(arrayOf("id"), arrayOf(), false) {
   }
   ```
   
-Logging Destinations.DetailScreen.route() will print **DetailScreen/{id}**, which is pretty much what we wanted to obtain, but in pascal case. Currently the generation matchs the name of the function, but I'm planning to provide a way to customise it.
+Destinations.DetailScreen.route() returns the string **DetailScreen/{id}**, which is pretty much what we wanted to obtain, but in pascal case. Currently the generation matches the name of the function, but I'm planning to provide a way to customize it.
 So we can replace the hardcoded string in the composable dsl of the navigation graph:
 
 ```kotlin
@@ -144,7 +144,7 @@ public fun buildPath(id: String): String {
 }
 ```
 
-Logging **Destinations.DetailScreen.buildPath("1")** will print **DetailScreen/1** which is exactly what we need. The attributes to pass to the buildPath functions are always strings (so if the id is an Int, you will have to convert it into a string) and they alwas reflect what you wrote in the annotation. You can pass all the arguments you want:
+**Destinations.DetailScreen.buildPath("1")** returns the string **DetailScreen/1** which is exactly what we need. The attributes to pass to the buildPath functions are always strings (so if the id is an Int, you will have to convert it into a string) and they always reflect what you wrote in the annotation arguments. You can pass all the arguments you want:
 
 ```kotlin
 @Destination(
@@ -211,9 +211,9 @@ public object FourthDestination : BaseDestination(arrayOf(), arrayOf("optionalAr
   }
 ```
 
-Notice that in the **buildPath** function the **optionalArg** attribute is nullable, null by default. So logging **Destinations.FourthDestination.buildPath()** will write **FourthDestination** and logging **Destinations.FourthDestination.buildPath("hello")** will write **FourthDestination?optionalArg=hello**.
+Notice that in the **buildPath** function the **optionalArg** attribute is nullable, null by default. So **Destinations.FourthDestination.buildPath()** returns the string **FourthDestination** and **Destinations.FourthDestination.buildPath("hello")** returns **FourthDestination?optionalArg=hello**.
 
-You can combine every kind of path you want, for example:
+You can combine every kind of path and query params you want, for example:
 
 ```kotlin
 @Destination(
@@ -262,7 +262,7 @@ public object FifthDestination : BaseDestination(arrayOf("id","anotherArgument",
   }
 ```
 
-Logging **Destinations.FifthDestination.route()** will print **FifthDestination/{id}/{anotherArgument}/{andAnother}?optionalArg={optionalArg}&optionalArg2={optionalArg2}**. Also check the following:
+**Destinations.FifthDestination.route()** returns **FifthDestination/{id}/{anotherArgument}/{andAnother}?optionalArg={optionalArg}&optionalArg2={optionalArg2}**. Also check the following:
 
 ```kotlin
 Destinations.FifthDestination.buildPath(
@@ -275,7 +275,35 @@ Destinations.FifthDestination.buildPath(
 
 //creates the string FifthDestination/1/hello/hi?optionalArg=good&optionalArg2=last
 ```
+# How to get the arguments
 
+I recommend to read the official navigation documentation to understand how to obtain the arguments passed to a destination. If you use hilt, you can add the following dependency:
 
+```kotlin
+implementation 'androidx.hilt:hilt-navigation-compose:x.y.z'
+```
 
+So for each destination of the navigation graph you can scope a ViewModel in this way:
+
+```kotlin
+val viewModel: YourViewModel = hiltViewModel()
+```
+
+In this ViewModel you can pass a SavedStateInstance object in the constructor. Hilt automatically handle it. The navigation arguments are inside it, and you can get them using the templates you passed in the route as keys. For example, for the route DetailScreen/{id}, when you navigate passing 1 as id (so DetailScreen/1), you can get the **1** in this way:
+
+```kotlin
+val id: String = savedStateHandle["id"] ?: ""
+```
+
+This is very confortable to me, since all the business logic is handled on my ViewModels. But notice that you have to use the hardcoded string **id**. Well in the generated objects there are constants available for each arguments. For example, in the DetailScreen one:
+
+```kotlin
+public object DetailScreen : BaseDestination(arrayOf("id"), arrayOf(), false) {
+    public const val KEY_id: String = "id"
+    ...
+```
+
+So with the statement Destinations.DetailScreen.KEY_id you have the proper key to use to get the value from the SavedStateHandle object.
+
+# Dynamic title
 
