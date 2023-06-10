@@ -17,10 +17,12 @@ limitations under the License.
  */
 
 @MustBeDocumented
+@Repeatable
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.SOURCE)
 annotation class Destination(
     val graphName: String = "Destinations",
+    val destinationName: String = "",
     val dynamicTitle: Boolean = false,
     val paths: Array<String> = [],
     val queryParams: Array<String> = []

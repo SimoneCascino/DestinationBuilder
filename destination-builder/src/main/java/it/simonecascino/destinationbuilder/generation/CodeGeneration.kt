@@ -1,5 +1,21 @@
 package it.simonecascino.destinationbuilder.generation
 
+/**
+Copyright (C) 2021 Simone Cascino
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+ */
+
 import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.getAnnotationsByType
 import com.google.devtools.ksp.symbol.KSFile
@@ -124,7 +140,7 @@ class CodeGeneration(
 
         val function = FunSpec.builder(FROM_PATH)
             .addParameter(PATH, String::class)
-            .returns(BaseDestination::class)
+            .returns(BaseDestination::class.asTypeName().copy(nullable = true))
             .beginControlFlow("val name = if($PATH.contains(%S))", "/")
             .addStatement("$PATH.split(%S).first()", "/")
             .endControlFlow()
@@ -142,8 +158,7 @@ class CodeGeneration(
             function.addStatement(" %S -> $it", it)
         }
 
-        //todo: don't throw the exception here, since we may have multiple graph
-        function.addStatement(" else -> throw RuntimeException()")
+        function.addStatement(" else -> null")
 
         function.addStatement("}")
 
@@ -179,6 +194,14 @@ class CodeGeneration(
             .addSuperclassConstructorParameter(CodeBlock.builder().add("${annotation.dynamicTitle}").build())
 
         objectSpecBuilder.addFunction(generateInnerPathFunction(annotation, objectSpecBuilder))
+
+        if(annotation.destinationName.isNotBlank()){
+            objectSpecBuilder.addProperty(
+                PropertySpec.builder("name", String::class, KModifier.OVERRIDE)
+                    .initializer("%S", annotation.destinationName)
+                    .build()
+            )
+        }
 
         sourceFiles.forEach {
             objectSpecBuilder.addOriginatingKSFile(it)
@@ -220,7 +243,7 @@ class CodeGeneration(
                 .addParameter(s, String::class)
 
             objectSpecBuilder.addProperty(
-                PropertySpec.builder("KEY_$s", String::class, KModifier.CONST)
+                PropertySpec.builder("KEY_${s.uppercase()}", String::class, KModifier.CONST)
                     .initializer("%S", s).build()
             )
 
@@ -239,7 +262,7 @@ class CodeGeneration(
                 )
 
             objectSpecBuilder.addProperty(
-                PropertySpec.builder("KEY_$s", String::class, KModifier.CONST)
+                PropertySpec.builder("KEY_${s.uppercase()}", String::class, KModifier.CONST)
                     .initializer("%S", s).build()
             )
 

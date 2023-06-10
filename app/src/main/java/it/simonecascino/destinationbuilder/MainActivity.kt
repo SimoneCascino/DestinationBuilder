@@ -27,7 +27,6 @@ import it.simonecascino.destinationbuilder.annotation.Destination
 import it.simonecascino.destinationbuilder.base.BaseDestination
 import it.simonecascino.destinationbuilder.ui.theme.DestinationBuilderTheme
 import java.net.URLDecoder
-import java.net.URLEncoder
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -85,21 +84,21 @@ class MainActivity : ComponentActivity() {
                         composable(
                             route = MainGraph.SecondDestination.route(),
                             arguments = listOf(
-                                navArgument(MainGraph.SecondDestination.KEY_param1){
+                                navArgument(MainGraph.SecondDestination.KEY_PARAM1){
                                     type = NavType.StringType
                                 },
-                                navArgument(MainGraph.SecondDestination.KEY_param2){
+                                navArgument(MainGraph.SecondDestination.KEY_PARAM2){
                                     type = NavType.IntType
                                 }
                             )
                         ){
 
-                            val param1 = it.arguments?.getString(MainGraph.SecondDestination.KEY_param1) ?: ""
-                            val param2 = it.arguments?.getInt(MainGraph.SecondDestination.KEY_param2) ?: 0
+                            val param1 = it.arguments?.getString(MainGraph.SecondDestination.KEY_PARAM1) ?: ""
+                            val param2 = it.arguments?.getInt(MainGraph.SecondDestination.KEY_PARAM2) ?: 0
 
                             SecondDestination(param1, param2){
                                 navController.navigate(
-                                    MainGraph.ThirdDestination.buildPath(URLEncoder.encode("Third destination", "UTF-8"))
+                                    MainGraph.ThirdDestination.buildPath("Third destination")
                                 )
                             }
                         }
@@ -115,7 +114,7 @@ class MainActivity : ComponentActivity() {
 
                             ThirdDestination{
                                 navController.navigate(
-                                    MainGraph.FourthDestination.buildPath("Query1")
+                                    MainGraph.FourthDestination.buildPath("https://www.google.it")
                                 )
                             }
                         }
@@ -123,15 +122,15 @@ class MainActivity : ComponentActivity() {
                         composable(
                             route = MainGraph.FourthDestination.route(),
                             arguments = listOf(
-                                navArgument(MainGraph.FourthDestination.KEY_query1){
+                                navArgument(MainGraph.FourthDestination.KEY_QUERY1){
                                     type = NavType.StringType
                                     nullable = true
                                 },
-                                navArgument(MainGraph.FourthDestination.KEY_query2){
+                                navArgument(MainGraph.FourthDestination.KEY_QUERY2){
                                     type = NavType.StringType
                                     nullable = true
                                 },
-                                navArgument(MainGraph.FourthDestination.KEY_query3){
+                                navArgument(MainGraph.FourthDestination.KEY_QUERY3){
                                     type = NavType.StringType
                                     nullable = true
                                     defaultValue = "queryDefault"
@@ -140,9 +139,9 @@ class MainActivity : ComponentActivity() {
 
                         ){
 
-                            val query1 = it.arguments?.getString(MainGraph.FourthDestination.KEY_query1)
-                            val query2 = it.arguments?.getString(MainGraph.FourthDestination.KEY_query2)
-                            val query3 = it.arguments?.getString(MainGraph.FourthDestination.KEY_query3)
+                            val query1 = it.arguments?.getString(MainGraph.FourthDestination.KEY_QUERY1)
+                            val query2 = it.arguments?.getString(MainGraph.FourthDestination.KEY_QUERY2)
+                            val query3 = it.arguments?.getString(MainGraph.FourthDestination.KEY_QUERY3)
 
                             FourthDestination(query1 = query1, query2 = query2, query3 = query3)
 
@@ -218,6 +217,7 @@ fun FifthDestination(){
 
 @Destination(
     graphName = "FeatureGraph",
+    destinationName = "testname",
     paths = ["test"]
 )
 @Composable
