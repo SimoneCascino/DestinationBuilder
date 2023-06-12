@@ -1,3 +1,17 @@
+# Summary
+
+- [What is DestinationBuilder?](https://github.com/SimoneCascino/DestinationBuilder#destinationbuilder)
+- [Integration](https://github.com/SimoneCascino/DestinationBuilder#integration)
+- [How it works](https://github.com/SimoneCascino/DestinationBuilder#how-it-works)
+- [How to use it](https://github.com/SimoneCascino/DestinationBuilder#how-to-use-it)
+- [Passing arguments between destinations](https://github.com/SimoneCascino/DestinationBuilder#passing-arguments-between-destinations)
+- [Optional arguments](https://github.com/SimoneCascino/DestinationBuilder#optional-arguments)
+- [How to get the arguments](https://github.com/SimoneCascino/DestinationBuilder#how-to-get-the-arguments)
+- [Obtain the destination from the navController](https://github.com/SimoneCascino/DestinationBuilder#obtain-the-destination-from-the-navcontroller)
+- [Dynamic title](https://github.com/SimoneCascino/DestinationBuilder#dynamic-title)
+- [Custom destination name](https://github.com/SimoneCascino/DestinationBuilder#custom-destination-name)
+- [Multimodular/Multigraph project](https://github.com/SimoneCascino/DestinationBuilder#multimodularmultigraph-project)
+
 # DestinationBuilder
 Google released Jetpack Compose, the new UI toolkit for Android. It also released navigation for Jetpack Compose, a component which allows building a navigation graph and enabling the navigation between composable functions ([here the official documentation](https://developer.android.com/jetpack/compose/navigation). Knowledge of Jetpack Compose Navigation is required to understand the purpose of this library.
 
