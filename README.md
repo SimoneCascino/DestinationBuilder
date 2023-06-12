@@ -1,5 +1,5 @@
 # DestinationBuilder
-Google released Jetpack Compose, the new UI toolkit for Android. It also released navigation for Jetpack Compose, a component which allow to build a navigation graph and enable the navigation between composable functions ([here the official documentation](https://developer.android.com/jetpack/compose/navigation). Knowledge of Jetpack Compose Navigation is required to understand the purpose of this library.
+Google released Jetpack Compose, the new UI toolkit for Android. It also released navigation for Jetpack Compose, a component which allows building a navigation graph and enabling the navigation between composable functions ([here the official documentation](https://developer.android.com/jetpack/compose/navigation). Knowledge of Jetpack Compose Navigation is required to understand the purpose of this library.
 
 Navigation provide some nice features, but requires the definition of all the destinations. It also requires to handle some logic to generate the routes which are used to navigate. The most recommended approach is to use enums or sealed classes. Destination Builder autogenerates such classes for you, via annotation processor, handling several things, avoiding boilerplate and mainteinance problems.
 
