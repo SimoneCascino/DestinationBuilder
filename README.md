@@ -33,15 +33,15 @@ repositories {
 Then just add (kotlin-dsl):
 
 ```kotlin
-implementation("com.github.SimoneCascino:DestinationBuilder:1.1.3")
-ksp("com.github.SimoneCascino:DestinationBuilder:1.1.3")
+implementation("com.github.SimoneCascino:DestinationBuilder:1.1.4")
+ksp("com.github.SimoneCascino:DestinationBuilder:1.1.4")
 ```
 
 or in groovy:
 
 ```
-implementation 'com.github.SimoneCascino:DestinationBuilder:1.1.3'
-ksp 'com.github.SimoneCascino:DestinationBuilder:1.1.3'
+implementation 'com.github.SimoneCascino:DestinationBuilder:1.1.4'
+ksp 'com.github.SimoneCascino:DestinationBuilder:1.1.4'
 ```
 
 # How it works?
