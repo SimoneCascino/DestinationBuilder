@@ -58,22 +58,28 @@ fun FirstScreen(){
 This will generate a sealed class called **Destinations** which extends **BaseDestination** and an object wrapped into it, called **FirstScreen**, which extends **Destinations**. It also generates other things, we will se them later:
 
 ``` kotlin
-public object Destinations {
-  public fun fromPath(path: String): BaseDestination? {
-    val name = if(path.contains("/")) {
-      path.split("/").first()
-    }
-    else if (path.contains("?")) {
-      path.split("?").first()
-    }
-    else path
-    return when(name){
-     "FirstScreen" -> FirstScreen
-     else -> null
+public sealed class Destinations(
+  paths: Array<out String>,
+  queryParams: Array<out String>,
+  dynamicTitle: Boolean,
+) : BaseDestination(paths, queryParams, dynamicTitle) {
+  public companion object {
+    public fun fromPath(path: String): BaseDestination? {
+      val name = if(path.contains("/")) {
+        path.split("/").first()
+      }
+      else if (path.contains("?")) {
+        path.split("?").first()
+      }
+      else path
+      return when(name){
+       "FirstScreen" -> FirstScreen
+       else -> null
+      }
     }
   }
 
-  public object FirstScreen : BaseDestination(arrayOf(), arrayOf(), false) {
+  public object FirstScreen : Destinations(arrayOf(), arrayOf(), false) {
     public fun buildPath(): String {
       val pathMap = mutableMapOf<String, String>()
       val queryMap = mutableMapOf<String, String?>()
@@ -140,7 +146,7 @@ fun DetailScreen(){
 If you look now the generated object you will find this other object inside:
 
 ```kotlin
-public object DetailScreen : BaseDestination(arrayOf("id"), arrayOf(), false) {
+public object DetailScreen : Destinations(arrayOf("id"), arrayOf(), false) {
     public const val KEY_ID: String = "id"
 
     public fun buildPath(id: String): String {
@@ -198,7 +204,7 @@ fun ThirdScreen(){
 
 //will generate the following:
 
-public object ThirdScreen : BaseDestination(arrayOf("id","anotherArgument","andAnother"),
+public object ThirdScreen : Destinations(arrayOf("id","anotherArgument","andAnother"),
       arrayOf(), false) {
     public const val KEY_ID: String = "id"
 
@@ -238,7 +244,7 @@ fun FourthDestination(){
 To generate:
 
 ```kotlin
-public object FourthDestination : BaseDestination(arrayOf(), arrayOf("optionalArg"), false) {
+public object FourthDestination : Destinations(arrayOf(), arrayOf("optionalArg"), false) {
     public const val KEY_optionalArg: String = "optionalArg"
 
     public fun buildPath(optionalArg: String? = null): String {
@@ -268,7 +274,7 @@ fun FifthDestination(){
 
 //generates the following
 
-public object FifthDestination : BaseDestination(arrayOf("id","anotherArgument","andAnother"),
+public object FifthDestination : Destinations(arrayOf("id","anotherArgument","andAnother"),
       arrayOf("optionalArg","optionalArg2"), false) {
     public const val KEY_ID: String = "id"
 
