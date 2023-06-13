@@ -45,7 +45,7 @@ ksp 'com.github.SimoneCascino:DestinationBuilder:1.1.3'
 ```
 
 # How it works?
-To trigger the generation you must annotate a composable function with the **Destination** annotation. So, suppose that the first screen you want to show in your app is a composable functiona called **FirstDestination**, you have the following: 
+To trigger the generation, annotate a composable function with the **Destination** annotation. So, suppose that the first screen you want to show in your app is a composable function called **FirstDestination**: 
 
 ``` kotlin
 @Destination
