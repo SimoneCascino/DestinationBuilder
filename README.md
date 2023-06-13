@@ -245,7 +245,7 @@ To generate:
 
 ```kotlin
 public object FourthDestination : Destinations(arrayOf(), arrayOf("optionalArg"), false) {
-    public const val KEY_optionalArg: String = "optionalArg"
+    public const val KEY_OPTIONALARG: String = "optionalArg"
 
     public fun buildPath(optionalArg: String? = null): String {
       val pathMap = mutableMapOf<String, String>()
