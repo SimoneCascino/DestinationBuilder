@@ -115,9 +115,7 @@ class CodeGeneration(
                 TypeSpec.companionObjectBuilder()
                     .addFunction(
                         generateFromFunction(
-                            annotations?.map {
-                                it.name
-                            } ?: emptyList()
+                            annotations?: emptyList()
                         )
                     )
                     .build()
@@ -135,7 +133,7 @@ class CodeGeneration(
     }
 
     private fun generateFromFunction(
-        names: List<String>
+        destinations: List<AnnotationAndName>
     ): FunSpec {
 
         val function = FunSpec.builder(FROM_PATH)
@@ -154,8 +152,8 @@ class CodeGeneration(
             function.addOriginatingKSFile(it)
         }
 
-        names.forEach {
-            function.addStatement(" %S -> $it", it)
+        destinations.forEach {
+            function.addStatement(" %S -> ${it.name}", it.destination.destinationName.ifBlank { it.name })
         }
 
         function.addStatement(" else -> null")
