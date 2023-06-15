@@ -485,5 +485,4 @@ public sealed class FeatureGraph(
 }
 ```
 
-So now there are 2 files, Destinations and FeatureGraph, and no conflicts between them. I recommend to always split the destinations into multiple graphs if the app has multiple modules or if it has multiple graphs. If a destination can belongs to more than 1 graph, the Destination annotation can be re-applied.
-The Destination annotation can be applied multiple times to the same composable function, so using different graph names (required otherwise the build will fail with a compilation error) is possible to generate Destinations starting from the same screen.
+So now there are 2 files, Destinations and FeatureGraph, and no conflicts between them. I recommend to always split the destinations into multiple graphs if the app has multiple modules or if it has multiple graphs. If a destination can belongs to more than 1 graph, the Destination annotation can be re-applied using different graph names (required otherwise the build will fail with a compilation error).
