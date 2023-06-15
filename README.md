@@ -430,7 +430,7 @@ fun SeventhScreen(){
 }
 ```
 
-In this case, **Destinations.SeventhScreen.route()** returns the string **bettername**. While this can be a nice feature to use to improve the generated uri style or even to create multiple destinations from the same composable function (read below), it should be used carefully. If the same destination name is used in the same navigation graph the app will crash, but the build process will succeed, which won't happen if a function with the same name is marked as destination (the build process will fail, since it will try to generate 2 objects with the same name, so it will lead to a compilation error).
+In this case, **Destinations.SeventhScreen.route()** returns the string **bettername**. While this can be a nice feature to use to improve the generated uri style or even to create multiple destinations from the same composable function (read below), it should be used carefully. If the same destination name is used in the same navigation graph the app will crash, but the build process will succeed.
 
 # Multimodular/multigraph project
 
@@ -485,4 +485,5 @@ public sealed class FeatureGraph(
 }
 ```
 
-So now there are 2 files, Destinations and FeatureGraph, and no conflicts between them. I recommend to always split the destinations into multiple graphs if the app has multipple modules or if it has multiple graphs. If a destination can belongs to more than 1 graph, the Destination annotation can be re-applied.
+So now there are 2 files, Destinations and FeatureGraph, and no conflicts between them. I recommend to always split the destinations into multiple graphs if the app has multiple modules or if it has multiple graphs. If a destination can belongs to more than 1 graph, the Destination annotation can be re-applied.
+The Destination annotation can be applied multiple times to the same composable function, so using different graph names (required otherwise the build will fail with a compilation error) is possible to generate Destinations starting from the same screen.
