@@ -24,7 +24,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import it.simonecascino.destination.MainGraph
-import it.simonecascino.destinationbuilder.annotation.Destination
+import it.simonecascino.destinationbuilder.annotations.Destination
 import it.simonecascino.destinationbuilder.base.BaseDestination
 import it.simonecascino.destinationbuilder.ui.theme.DestinationBuilderTheme
 import java.net.URLDecoder
@@ -86,17 +86,17 @@ class MainActivity : ComponentActivity() {
                         composable(
                             route = MainGraph.SecondDestination.route(),
                             arguments = listOf(
-                                navArgument(MainGraph.SecondDestination.KEY_PARAM1){
+                                navArgument(MainGraph.SecondDestination.KEY_PARAM_1){
                                     type = NavType.StringType
                                 },
-                                navArgument(MainGraph.SecondDestination.KEY_PARAM2){
+                                navArgument(MainGraph.SecondDestination.KEY_PARAM_2){
                                     type = NavType.IntType
                                 }
                             )
                         ){
 
-                            val param1 = it.arguments?.getString(MainGraph.SecondDestination.KEY_PARAM1) ?: ""
-                            val param2 = it.arguments?.getInt(MainGraph.SecondDestination.KEY_PARAM2) ?: 0
+                            val param1 = it.arguments?.getString(MainGraph.SecondDestination.KEY_PARAM_1) ?: ""
+                            val param2 = it.arguments?.getInt(MainGraph.SecondDestination.KEY_PARAM_2) ?: 0
 
                             SecondDestination(param1, param2){
                                 navController.navigate(
@@ -226,7 +226,6 @@ fun FifthDestination(){
 fun SixthDestination(){
 
 }
-
 
 @Composable
 fun DestinationLayout(text: String, goToNext: () -> Unit){

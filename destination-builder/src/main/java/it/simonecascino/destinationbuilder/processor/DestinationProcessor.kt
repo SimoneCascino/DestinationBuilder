@@ -23,7 +23,7 @@ import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import com.squareup.kotlinpoet.ksp.writeTo
-import it.simonecascino.destinationbuilder.annotation.Destination
+import it.simonecascino.destinationbuilder.annotations.Destination
 import it.simonecascino.destinationbuilder.generation.CodeGeneration
 
 class DestinationProcessor(private val environment: SymbolProcessorEnvironment): SymbolProcessor {

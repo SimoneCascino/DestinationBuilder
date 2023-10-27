@@ -32,7 +32,7 @@ import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.WildcardTypeName
 import com.squareup.kotlinpoet.asTypeName
 import com.squareup.kotlinpoet.ksp.addOriginatingKSFile
-import it.simonecascino.destinationbuilder.annotation.Destination
+import it.simonecascino.destinationbuilder.annotations.Destination
 import it.simonecascino.destinationbuilder.base.BaseDestination
 
 private const val PACKAGE_NAME = "it.simonecascino.destination"
@@ -43,6 +43,8 @@ private const val PATHS = "paths"
 private const val QUERY_PARAMS = "queryParams"
 private const val DYNAMIC_TITLE = "dynamicTitle"
 private const val ANDROID_TITLE_VALUE = "androidAppTitle"
+
+private val underscoreChar = "_".toCharArray().first()
 
 class CodeGeneration(
     private val sourceFiles: Set<KSFile>,
@@ -117,6 +119,11 @@ class CodeGeneration(
                         generateFromFunction(
                             annotations?: emptyList()
                         )
+                    )
+                    .addProperty(
+                        PropertySpec.builder("graphRoute", String::class)
+                            .initializer("%S", graphName.lowercase())
+                            .build()
                     )
                     .build()
             ).also { builder ->
@@ -240,8 +247,26 @@ class CodeGeneration(
                 .addStatement("pathMap[%S] = $s", annotation.paths[index])
                 .addParameter(s, String::class)
 
+            val nameInSnakeCase = s.fold(StringBuilder("KEY_")){ acc, c ->
+                acc.also {
+
+                    it.append(
+
+                        if(c.isLowerCase())
+                            c.uppercase()
+
+                        else if (
+                            c.isLetter() || (c.isDigit() && acc.last() != underscoreChar)
+                        )
+                            "_$c"
+
+                        else c
+                    )
+                }
+            }.toString()
+
             objectSpecBuilder.addProperty(
-                PropertySpec.builder("KEY_${s.uppercase()}", String::class, KModifier.CONST)
+                PropertySpec.builder(nameInSnakeCase, String::class, KModifier.CONST)
                     .initializer("%S", s).build()
             )
 
