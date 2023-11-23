@@ -20,6 +20,7 @@ import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.getAnnotationsByType
 import com.google.devtools.ksp.symbol.KSFile
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
+import com.google.devtools.ksp.symbol.KSType
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FileSpec
@@ -32,7 +33,9 @@ import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.WildcardTypeName
 import com.squareup.kotlinpoet.asTypeName
 import com.squareup.kotlinpoet.ksp.addOriginatingKSFile
+import com.squareup.kotlinpoet.ksp.toClassName
 import it.simonecascino.destinationbuilder.annotations.Destination
+import it.simonecascino.destinationbuilder.annotations.Graph
 import it.simonecascino.destinationbuilder.base.BaseDestination
 
 private const val PACKAGE_NAME = "it.simonecascino.destination"
@@ -54,41 +57,119 @@ class CodeGeneration(
     @OptIn(KspExperimental::class)
     fun generateFileSpecs(): List<FileSpec>{
 
-        val destinations = processableSymbols.map {
-            AnnotationAndName(
-                destination = it.getAnnotationsByType(Destination::class).first(),
-                name = it.simpleName.getShortName()
-            )
+        val destinations = ArrayList<AnnotationSpecsAndName<Destination>>()
+        val resolvers = ArrayList<AnnotationSpecsAndName<List<String>>>()
+
+        processableSymbols.forEach { function ->
+
+            function.getAnnotationsByType(Destination::class).firstOrNull()?.let {
+                destinations.add(
+                    AnnotationSpecsAndName(
+                        annotation = it,
+                        name = function.simpleName.getShortName()
+                    )
+                )
+            }
+
+            function.annotations.filter {
+                it.shortName.getShortName() == Graph::class.simpleName &&
+                it.annotationType.resolve().declaration.qualifiedName?.asString() == Graph::class.qualifiedName
+            } .let{ graphAnnotations ->
+
+                graphAnnotations.firstOrNull()?.arguments?.let { args ->
+                    val consumerType = args.first().value as ArrayList<KSType>
+
+                    resolvers.add(
+                        AnnotationSpecsAndName(
+                            annotation = consumerType.map {
+                                it.toClassName().simpleName
+                            },
+                            name = "${function.simpleName.getShortName()}Resolver"
+                        )
+                    )
+                }
+
+            }
 
         }
 
         val graphs = destinations.groupBy {
-            it.destination.graphName
+            it.annotation.graphName
         }
 
-        return graphs.keys.map { graphName ->
+        val specs = ArrayList<FileSpec>()
 
+        graphs.keys.forEach { graphName ->
             val annotations = graphs[graphName]
 
-            val code = generateFileContent(
+            val code = generateDestinationsFileContent(
                 graphName,
                 annotations
             )
 
-            FileSpec.builder(
-                PACKAGE_NAME,
-                graphName
-            ).also { fileSpec ->
-                fileSpec.addType(code)
-            }.build()
+            specs.add(
+                FileSpec.builder(
+                    PACKAGE_NAME,
+                    graphName
+                ).also { fileSpec ->
+                    fileSpec.addType(code)
+                }.build()
+            )
 
         }
 
+        resolvers.forEach { appGraph ->
+
+            if(appGraph.annotation.isEmpty())
+                return@forEach
+
+            specs.add(
+                FileSpec.builder(
+                    PACKAGE_NAME,
+                    appGraph.name
+                ).also {
+                    it.addType(generateResolver(appGraph))
+                }.build()
+            )
+
+        }
+
+        return specs
+
     }
 
-    private fun generateFileContent(
+    private fun generateResolver(
+        annotation: AnnotationSpecsAndName<List<String>>
+    ): TypeSpec{
+
+        val code = annotation.annotation.joinToString(
+            separator = " ?:\n",
+            prefix = "return (\n",
+            postfix = "\n) ?: throw IllegalStateException()"
+        ){
+            "\t$it.fromPath(route)"
+        }
+
+        return TypeSpec.objectBuilder(annotation.name)
+            .addFunction(
+                funSpec = FunSpec.builder(
+                    "resolve"
+                ).addParameter(
+                    "route",
+                    String::class
+                ).addStatement(
+                    code
+                ).returns(
+                    BaseDestination::class
+                ).build()
+            )
+            .build()
+
+    }
+
+    private fun generateDestinationsFileContent(
         graphName: String,
-        annotations: List<AnnotationAndName>?
+        annotations: List<AnnotationSpecsAndName<Destination>>?
     ): TypeSpec {
 
         val array = ClassName("kotlin", "Array")
@@ -132,7 +213,7 @@ class CodeGeneration(
                 }
                 annotations?.forEach {
                     builder.addType(
-                        generateDestination(it.destination, graphName, it.name)
+                        generateDestination(it.annotation, graphName, it.name)
                     )
                 }
             }.build()
@@ -140,7 +221,7 @@ class CodeGeneration(
     }
 
     private fun generateFromFunction(
-        destinations: List<AnnotationAndName>
+        destinations: List<AnnotationSpecsAndName<Destination>>
     ): FunSpec {
 
         val function = FunSpec.builder(FROM_PATH)
@@ -160,7 +241,7 @@ class CodeGeneration(
         }
 
         destinations.forEach {
-            function.addStatement(" %S -> ${it.name}", it.destination.destinationName.ifBlank { it.name })
+            function.addStatement(" %S -> ${it.name}", it.annotation.destinationName.ifBlank { it.name })
         }
 
         function.addStatement(" else -> null")
@@ -296,8 +377,8 @@ class CodeGeneration(
             .build()
     }
 
-    private data class AnnotationAndName(
-        val destination: Destination,
+    private data class AnnotationSpecsAndName<T>(
+        val annotation: T,
         val name: String
     )
 

@@ -23,8 +23,10 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import it.simonecascino.destination.FeatureGraph
 import it.simonecascino.destination.MainGraph
 import it.simonecascino.destinationbuilder.annotations.Destination
+import it.simonecascino.destinationbuilder.annotations.Graph
 import it.simonecascino.destinationbuilder.base.BaseDestination
 import it.simonecascino.destinationbuilder.ui.theme.DestinationBuilderTheme
 import java.net.URLDecoder
@@ -225,8 +227,16 @@ fun FifthDestination(){
 @Composable
 fun SixthDestination(){
 
+    Text("Hello")
+
 }
 
+@Graph(
+    graphs = [
+        MainGraph::class,
+        FeatureGraph::class
+    ]
+)
 @Composable
 fun DestinationLayout(text: String, goToNext: () -> Unit){
 

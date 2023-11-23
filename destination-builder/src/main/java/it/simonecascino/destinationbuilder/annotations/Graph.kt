@@ -1,5 +1,8 @@
 package it.simonecascino.destinationbuilder.annotations
 
+import it.simonecascino.destinationbuilder.base.BaseDestination
+import kotlin.reflect.KClass
+
 /**
 Copyright (C) 2023 Simone Cascino
 
@@ -18,4 +21,6 @@ limitations under the License.
 @MustBeDocumented
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.SOURCE)
-annotation class AppGraph
+annotation class Graph(
+    val graphs: Array<out KClass<out BaseDestination>> = [],
+)
