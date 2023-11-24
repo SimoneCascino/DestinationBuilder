@@ -53,7 +53,7 @@ class MainActivity : ComponentActivity() {
                 else MainGraph.FirstDestination
 
                 val title = URLDecoder.decode(
-                    navBackStackEntry?.arguments?.getString(BaseDestination.ANDROID_TITLE) ?: currentDestination.route(),
+                    navBackStackEntry?.arguments?.getString(BaseDestination.ANDROID_TITLE) ?: currentDestination?.route(),
                     "UTF-8"
                 ).let {
                     if(it.length > 30)

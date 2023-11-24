@@ -145,7 +145,7 @@ class CodeGeneration(
         val code = annotation.annotation.joinToString(
             separator = " ?:\n",
             prefix = "return (\n",
-            postfix = "\n) ?: throw IllegalStateException()"
+            postfix = "\n) ?: null"
         ){
             "\t$it.fromPath(route)"
         }
@@ -160,7 +160,7 @@ class CodeGeneration(
                 ).addStatement(
                     code
                 ).returns(
-                    BaseDestination::class
+                    BaseDestination::class.asTypeName().copy(nullable = true)
                 ).build()
             )
             .build()
