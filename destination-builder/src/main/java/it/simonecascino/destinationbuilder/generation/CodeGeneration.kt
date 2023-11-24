@@ -144,8 +144,7 @@ class CodeGeneration(
 
         val code = annotation.annotation.joinToString(
             separator = " ?:\n",
-            prefix = "return (\n",
-            postfix = "\n) ?: null"
+            prefix = "return \n",
         ){
             "\t$it.fromPath(route)"
         }
