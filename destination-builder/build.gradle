@@ -14,7 +14,7 @@ publishing {
         mavenJava(MavenPublication) {
             groupId = 'it.simonecascino'
             artifactId = 'destinationbuilder'
-            version = 'v.1.1.6'
+            version = 'v.1.1.7'
 
             afterEvaluate{
                 from components.java
